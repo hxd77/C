@@ -3,6 +3,7 @@
 #include"conventional.h"
 
 AES aes;  
+word T_table0[256],T_table1[256],T_table2[256],T_table3[256];
 
 void init_AES() { //AES初始化
     aes.Nk = 4;
@@ -236,64 +237,40 @@ void printState(word state[])
     }
 }
 
-// C 版本的加密流程（带中间状态打印，替代原 C++ 方法）
-void AES_encryption_debug(word in[], word out[], word key[])
+
+void Make_Ttable()
 {
-    int i, j, round;
-    printf("\n=== Start Encryption Process ===\n\n");
-
-    // 复制输入并打印初始状态
-    printf("Initial state:\n");
-    for(j = 0; j < 4; j++) {
-        for(i = 0; i < 4; i++) {
-            out[i].wordKey[j] = in[i].wordKey[j];
-            printf("0x%02x ", (unsigned)out[i].wordKey[j]);
-        }
-        printf("\n");
+    int i;
+    byte L,R;
+    byte s,s2,s3;
+    for(i=0;i<256;i++)
+    {
+        L=i>>4;
+        R=i&0x0f;
+        s=SBox[L][R];
+        s2=GFMultiplyByte(s,2);
+        s3=GFMultiplyByte(s,3);
+        
+        T_table0[i].wordKey[0]=s2;
+        T_table0[i].wordKey[1]=s;
+        T_table0[i].wordKey[2]=s;
+        T_table0[i].wordKey[3]=s3;
+        
+        T_table1[i].wordKey[0]=s3;
+        T_table1[i].wordKey[1]=s2;
+        T_table1[i].wordKey[2]=s;
+        T_table1[i].wordKey[3]=s;
+        
+        T_table2[i].wordKey[0]=s;
+        T_table2[i].wordKey[1]=s3;
+        T_table2[i].wordKey[2]=s2;
+        T_table2[i].wordKey[3]=s;
+        
+        T_table3[i].wordKey[0]=s;
+        T_table3[i].wordKey[1]=s;
+        T_table3[i].wordKey[2]=s3;
+        T_table3[i].wordKey[3]=s2; 
     }
-
-    // 初始轮密钥加
-    printf("\nAfter initial AddRoundKey:\n");
-    AddRoundKey(out, 0);
-    printState(out);
-
-    // 主要轮函数
-    for(round = 1; round < 10; round++) {
-        printf("\n==== Round %d ====\n", round);
-
-        printf("\nAfter SubBytes:\n");
-        SubByte(out);
-        printState(out);
-
-        printf("\nAfter ShiftRows:\n");
-        ShiftRows(out);
-        printState(out);
-
-        printf("\nAfter MixColumns:\n");
-        MixColumns(out);
-        printState(out);
-
-        printf("\nAfter AddRoundKey:\n");
-        AddRoundKey(out, round);
-        printState(out);
-    }
-
-    // 最后一轮（无 MixColumn）
-    printf("\n==== Final ====\n");
-
-    printf("\nSubBytes:\n");
-    SubByte(out);
-    printState(out);
-
-    printf("\nShiftRows:\n");
-    ShiftRows(out);
-    printState(out);
-
-    printf("\nFinal AddRoundKey:\n");
-    AddRoundKey(out, 10);
-    printState(out);
-
-    printf("\n=== Encryption Finished ===\n\n");
 }
 
 void AES_Encryption_Ttable(word plain[],word cipher[],word key[])
@@ -302,22 +279,62 @@ void AES_Encryption_Ttable(word plain[],word cipher[],word key[])
     int i,j,k;
     for(i=0;i<4;i++)
     {
-        for(j=4;j<4;j++)
+        for(j=0;j<4;j++)
         {
             cipher[i].wordKey[j]=plain[i].wordKey[j];
+            printf("%02x ", (unsigned)cipher[i].wordKey[j]);
         }
     }
     AddRoundKey(cipher,0);
-    for(i=1;i<10;i++)
+    printf("\n\nAddRoundKey:\n");
+    printState(cipher);
+    printf("\n\n");
+
+    printf("0x%02x\n\n",(unsigned)T_table0[(unsigned)(cipher[0].wordKey[0])].wordKey[0]);//d4
+    printf("0x%02x\n",GFMultiplyByte(0xd4,2));
+    
+    printf("-------------------\n");
+    printf("0x%02x\n\n",(unsigned)T_table1[(unsigned)(cipher[1].wordKey[1])].wordKey[1]);//bf
+    printf("0x%02x\n",GFMultiplyByte(0xbf,2));//da
+
+    printf("-------------------\n");
+    printf("0x%02x\n\n",(unsigned)T_table2[(unsigned)(cipher[2].wordKey[2])].wordKey[1]);//bf
+    printf("0x%02x\n",GFMultiplyByte(0x5d,3));//5d
+    
+    printf("-------------------\n");
+    printf("0x%02x\n\n",(unsigned)T_table3[(unsigned)(cipher[3].wordKey[3])].wordKey[1]);//bf
+    printf("0x%02x\n",GFMultiplyByte(0x30,1));//30
+    printf("-------------------\n");
+    printf("0x%02x\n",0xd4^0x65^0xe7^0x30);
+    printf("0x%02x\n",aes.wordKeys[4].wordKey[1]^0x66);
+    printf("T0: 0x%02x\n", (unsigned)T_table0[(unsigned)cipher[0].wordKey[0]].wordKey[0]);
+                
+    for(i=1;i<2;i++)
     {
         for(j=0;j<4;j++)
         {
-            cipher[j].wordKey[j]=T_table0[(unsigned)(cipher[j].wordKey[j])].wordKey[j]^T_table1[].wordKey[j]
+            for(k=0;k<4;k++)
+            {
+                cipher[j].wordKey[k]=
+                T_table0[(unsigned)(cipher[j].wordKey[0])].wordKey[k]
+                ^T_table1[(unsigned)(cipher[(j+1)%4].wordKey[1])].wordKey[k]
+                ^T_table2[(unsigned)(cipher[(j+2)%4].wordKey[2])].wordKey[k]
+                ^T_table3[(unsigned)(cipher[(j+3)%4].wordKey[3])].wordKey[k]
+                ^aes.wordKeys[j+4*i].wordKey[k];
+                printf("--------------------\n");
+                printf("i=%d, j=%d, k=%d\n", i, j, k);
+                printf("T0: 0x%02x\n", (unsigned)T_table0[(unsigned)cipher[j].wordKey[0]].wordKey[k]);
+                printf("T1: 0x%02x\n", (unsigned)T_table1[(unsigned)cipher[(j+1)%4].wordKey[1]].wordKey[k]);
+                printf("T2: 0x%02x\n", (unsigned)T_table2[(unsigned)cipher[(j+2)%4].wordKey[2]].wordKey[k]);
+                printf("T3: 0x%02x\n", (unsigned)T_table3[(unsigned)cipher[(j+3)%4].wordKey[3]].wordKey[k]);
+            }
         }
-        cipher[]
+        printState(cipher);
+        printf("\n\n");
     }
     //最后一轮
     SubByte(cipher);
     ShiftRows(cipher);
     AddRoundKey(cipher,10);
 }
+

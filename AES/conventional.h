@@ -1,5 +1,6 @@
-#include<stdio.h>
 
+#ifndef CONVENTIONAL_H
+#define CONVENTIONAL_H
 typedef unsigned char byte;
 
 typedef struct 
@@ -63,3 +64,4 @@ void AES_Encryption(word plain[],word cipher[],word key[]);
 // 调试用的加密流程（带中间状态打印），C 版本
 void printState(word state[]);
 void AES_encryption_debug(word in[], word out[], word key[]);
+#endif
