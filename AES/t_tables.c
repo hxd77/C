@@ -296,8 +296,9 @@ void AES_encryption_debug(word in[], word out[], word key[])
     printf("\n=== Encryption Finished ===\n\n");
 }
 
-void AES_Encryption(word plain[],word cipher[],word key[])
+void AES_Encryption_Ttable(word plain[],word cipher[],word key[])
 {
+    Make_Ttable();//生成T_tables
     int i,j,k;
     for(i=0;i<4;i++)
     {
@@ -309,10 +310,11 @@ void AES_Encryption(word plain[],word cipher[],word key[])
     AddRoundKey(cipher,0);
     for(i=1;i<10;i++)
     {
-        SubByte(cipher);
-        ShiftRows(cipher);
-        MixColumns(cipher);
-        AddRoundKey(cipher,i);
+        for(j=0;j<4;j++)
+        {
+            cipher[j].wordKey[j]=T_table0[(unsigned)(cipher[j].wordKey[j])].wordKey[j]^T_table1[].wordKey[j]
+        }
+        cipher[]
     }
     //最后一轮
     SubByte(cipher);
