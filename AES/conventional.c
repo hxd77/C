@@ -300,7 +300,7 @@ void AES_Encryption(word plain[],word cipher[],word key[])
     int i,j,k;
     for(i=0;i<4;i++)
     {
-        for(j=4;j<4;j++)
+        for(j=0;j<4;j++)
         {
             cipher[i].wordKey[j]=plain[i].wordKey[j];
         }

@@ -42,7 +42,7 @@ int main()
     }
 
     // 执行加密（假定存在 C 风格函数实现）
-    AES_encryption_debug(aes.plainText,aes.cipherText,aes.wordKeys);
+    AES_Encryption(aes.plainText,aes.cipherText,aes.wordKeys);
     //AES_Encryption_Ttable(aes.plainText,aes.cipherText,aes.wordKeys);
     // 获取并输出密文
 
